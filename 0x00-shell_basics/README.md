@@ -1,1 +1,1 @@
-script that prints display current directory contents, including hidden files (starting with .)
+script to print display current directory contents in long format with user and group IDs displayed numerically and hidden files (starting with .)
