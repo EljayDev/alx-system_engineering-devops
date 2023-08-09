@@ -1,30 +1,33 @@
 #!/usr/bin/python3
-"""Function to query a list of all hot posts on a given Reddit subreddit."""
+import json
 import requests
 
 
-def recurse(subreddit, hot_list=[], after="", count=0):
-    """Returns a list of titles of all hot posts on a given subreddit."""
-    url = "https://www.reddit.com/r/{}/hot/.json".format(subreddit)
-    headers = {
-        "User-Agent": "linux:0x16.api.advanced:v1.0.0 (by /u/bdov_)"
-    }
-    params = {
-        "after": after,
-        "count": count,
-        "limit": 100
-    }
-    response = requests.get(url, headers=headers, params=params,
+def recurse(subreddit, hot_list=[], after=None, ugly_flag=0):
+    user_agent = {"User-Agent": "unix:0-subs.py:v1.0"}
+    if after is None:
+        if ugly_flag == 1:
+            return hot_list
+        data = requests.get("https://www.reddit.com/r/{}/hot/.json"
+                            .format(subreddit),
+                            headers=user_agent,
                             allow_redirects=False)
-    if response.status_code == 404:
-        return None
-
-    results = response.json().get("data")
-    after = results.get("after")
-    count += results.get("dist")
-    for c in results.get("children"):
-        hot_list.append(c.get("data").get("title"))
-
-    if after is not None:
-        return recurse(subreddit, hot_list, after, count)
-    return hot_list
+        if data.status_code != 200:
+            return None
+        else:
+            json_data = data.json().get("data").get("children", [])
+            for post in json_data:
+                hot_list.append(post.get("data").get("title"))
+            ugly_flag = 1
+            after = data.json().get("data").get("after")
+            return recurse(subreddit, hot_list, after, ugly_flag)
+    else:
+        data = requests.get("https://www.reddit.com/r/{}/hot/.json?after={}"
+                            .format(subreddit, after),
+                            headers=user_agent,
+                            allow_redirects=False)
+        json_data = data.json().get("data").get("children", [])
+        for post in json_data:
+                hot_list.append(post.get("data").get("title"))
+        after = data.json().get("data").get("after")
+        return recurse(subreddit, hot_list, after, ugly_flag)
